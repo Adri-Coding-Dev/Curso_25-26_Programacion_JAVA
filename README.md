@@ -56,17 +56,6 @@ A lo largo del grado iré trabajando con:
 
 ---
 
-## 📌 Contenido
-
-| Proyecto          | Descripción                             | Estado        |
-| ----------------- | --------------------------------------- | ------------- |
-| Events_Management | Gestor de eventos con POO y Excepciones | 🟢 Completado |
-| ...               | ...                                     | ...           |
-
-_(Esta tabla se irá actualizando)_
-
----
-
 ## 🧑‍💻 Autor
 
 **Nombre:** _[Adrian Velasco Mañas]_  
