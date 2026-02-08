@@ -1,5 +1,6 @@
 package dao;
 
+import model.Bus;
 import model.Conductor;
 import utils.Utils;
 
@@ -14,154 +15,133 @@ import java.util.List;
  * Clase encargada de la logica del Conductor
  */
 public class ConductorDAO {
-    /**
-     * Metodo para listar todos los Conductores
-     * @param con -> Conexion estatica dentro del programa (definida en el el main)
-     * @return -> Lista con todos los conductores o NULL en caso de que la lista este vacia
-     */
-    public static List<Conductor> mostrarTodosLosConductores(Connection con){
-        String consulta = "SELECT * FROM Conductor";//Consulta
-        try{
-            //Preparamos la consulta (para evitar Inyeccion SQL)
-            PreparedStatement ps = con.prepareStatement(consulta);
-            //Ejecutamos la consulta
-            ResultSet rs = ps.executeQuery();
-            List<Conductor> conductores = new ArrayList<>();
+    /* ===========================
+       LISTAR TODOS
+       =========================== */
+    public static List<Conductor> findAll(Connection con) {
+        String sql = "SELECT Id_C, Nombre, Apellido FROM Conductor;";
+        List<Conductor> conductores = new ArrayList<>();
 
-            //Mientras encuentre registros...
-            while(rs.next()){
-                //Guardamos sus datos
-                int id_c = rs.getInt(1);
-                String tipo = rs.getString(2);
-                String licencia = rs.getString(3);
-                //Agregamos el Conductor a la lista
-                conductores.add(new Conductor(id_c,tipo,licencia));
-            }
-            //Devolvemos la lista
-            return conductores;
-        }catch (SQLException e){
-            e.printStackTrace();
-        }
-        return null;
-    }
+        try (PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
 
-    /**
-     * Metodo para insertar un Conductor
-     * @param con -> Conexion estatica dentro del programa (definida en main)
-     * @return -> TRUE si se ha insertado el Conductor correctamente | FALSE si NO se ha insertado el Conductor
-     */
-    public static boolean insertarConductor(Connection con){
-        String consulta = "INSERT INTO Conductor ( Id_C, Nombre, Apellido) VALUES ( ?, ?, ?);";//Consulta
-        try{
-            //Preparamos la consulta
-            PreparedStatement ps = con.prepareStatement(consulta);
-            //Pedimos los datos al usuario
-            ps.setInt(1, Utils.pedirNumeroAlUsuario("Introduce un Id del Conductor: "));
-            ps.setString(2,Utils.pedirCadenaAlUsuario("Introduce un Nombre para el Conductor: "));
-            ps.setString(3, Utils.pedirCadenaAlUsuario("Introduce un Apellido para el Conductor: "));
-            //Ejecutamos la consulta
-            return ps.executeUpdate()==1;//Si el numero de filas alteradas es 1(se ha tramitado correctamente)
-        }catch(SQLException e){
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    /**
-     * Metodo para borrar un Conductor
-     * @param con -> Conexion estatica dentro del programa (definida en main)
-     * @param id_C -> ID del Conductor que queramos borrar
-     * @return -> Numero de registros alterados (2 es lo normal, porque borramos de dos tablas*)
-     * @throws SQLException -> En caso de que haya fallos en la consulta
-     */
-    public static int borrarConductor(Connection con, int id_C) throws SQLException {
-        String consulta1 = "DELETE FROM Conductor WHERE Id_C = ?;";//Consulta para borrar en la Tabla Conductor
-        String consulta2 = "DELETE FROM BCL WHERE Id_C = ?;";//Consulta para borrar en la Tabla BCL
-        int registrosAlterados = 0;
-        try {
-            //Evitamos trabajar directamente con la BBDD
-            con.setAutoCommit(false);
-
-            //Intentamos la primera consulta
-            try(PreparedStatement ps = con.prepareStatement(consulta1)){
-                ps.setInt(1,id_C);
-                registrosAlterados += ps.executeUpdate();
-            }
-
-            //Intentamos la segunda consulta
-            try(PreparedStatement ps = con.prepareStatement(consulta2)){
-                ps.setInt(1,id_C);
-                registrosAlterados += ps.executeUpdate();
-            }
-
-            //Si va bien se aplican los cambios
-            con.commit();
-            return registrosAlterados;
-
-        }catch (SQLException e){
-            e.printStackTrace();
-            //Si falla, se vuelve al estado original
-            con.rollback();
-        }finally{
-            con.setAutoCommit(true);
-        }
-
-        return 0;
-    }
-
-    /**
-     * Metodo para editar un Conductor
-     * @param con -> Conexion estatica dentro del programa (definida en main)
-     * @param id_C -> ID del Conductor que queramos editar
-     * @return -> Numero de registros alterados
-     */
-    public static int editarConductor(Connection con,int id_C){
-        String consulta = "UPDATE Conductor SET Nombre = ?, Apellido = ? WHERE Id_C = ?";//Consulta
-        try{
-            //Preparamos la consulta
-            PreparedStatement ps = con.prepareStatement(consulta);
-            //Pedimos los datos al usuario
-            ps.setString(1,Utils.pedirCadenaAlUsuario("Introduce el nuevo nombre para el Conductor: "));
-            ps.setString(2, Utils.pedirCadenaAlUsuario("Introduce el nuevo apellido para el Conductor: "));
-            ps.setInt(3,id_C);
-
-            //Retornamos el numero de registros alterados
-            return ps.executeUpdate();
-
-        }catch (SQLException e){
-            e.printStackTrace();
-        }
-
-        return 0;
-    }
-
-    /**
-     * Metodo para buscar un Conductor
-     * @param con -> Conexion estatica dentro del programa (definida en main)
-     * @param id_C -> ID del Conductor que queramos borrar
-     * @return -> El registro completo en forma de Conductor
-     */
-    public static Conductor buscarConductor(Connection con,int id_C){
-        String consulta = "SELECT * FROM Conductor WHERE Id_C = ?;";//Consulta
-        try{
-            //Preparamos la consulta
-            PreparedStatement ps = con.prepareStatement(consulta);
-            ps.setInt(1, id_C);
-            //Ejecutamos la consulta
-            ResultSet rs = ps.executeQuery();
-            //Si hay registro...
-            while(rs.next()){
-                //Guardamos los datos
-                int id_Co = rs.getInt(1);
-                String nombre = rs.getString(2);
-                String apellido = rs.getString(3);
-                //Retornamos el Conductor con los datos guardados
-                return new Conductor(id_Co,nombre,apellido);
+            while (rs.next()) {
+                conductores.add(new Conductor(
+                        rs.getInt("Id_C"),
+                        rs.getString("Nombre"),
+                        rs.getString("Apellido")
+                ));
             }
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
+        return conductores; // NUNCA null
+    }
+
+    /* ===========================
+       BUSCAR POR ID
+       =========================== */
+    public static Conductor findById(Connection con, int idC) {
+        String sql = "SELECT * FROM Conductor WHERE Id_C = ?";
+
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, idC);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new Conductor(
+                            rs.getInt("Id_C"),
+                            rs.getString("Nombre"),
+                            rs.getString("Apellido")
+                    );
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
         return null;
+    }
+
+    /* ===========================
+       INSERTAR
+       =========================== */
+    public static boolean insert(Connection con, Conductor conductor) {
+        String sql = "INSERT INTO Conductor (Id_C, Nombre, Apellido) VALUES (?, ?, ?)";
+
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1,conductor.getId_C());
+            ps.setString(2, conductor.getNombre());
+            ps.setString(3, conductor.getApellido());
+
+            return ps.executeUpdate() == 1;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /* ===========================
+       ACTUALIZAR
+       =========================== */
+    public static boolean update(Connection con, Conductor conductor) {
+        String sql = "UPDATE Bus SET Nombre = ?, Apellido = ? WHERE Id_C = ?";
+
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, conductor.getNombre());
+            ps.setString(2, conductor.getApellido());
+            ps.setInt(3, conductor.getId_C());
+
+            return ps.executeUpdate() == 1;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /* ===========================
+       BORRAR (con transacción)
+       =========================== */
+    public static boolean delete(Connection con, int idC) {
+        String sqlCond = "DELETE FROM Conductor WHERE Id_C = ?";
+        String sqlBcl = "DELETE FROM BCL WHERE Id_C = ?";
+
+        try {
+            con.setAutoCommit(false);
+
+            try (PreparedStatement ps1 = con.prepareStatement(sqlBcl);
+                 PreparedStatement ps2 = con.prepareStatement(sqlCond)) {
+
+                ps1.setInt(1, idC);
+                ps1.executeUpdate();
+
+                ps2.setInt(1, idC);
+                int afectados = ps2.executeUpdate();
+
+                con.commit();
+                return afectados == 1;
+            }
+
+        } catch (SQLException e) {
+            try {
+                con.rollback();
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+            e.printStackTrace();
+            return false;
+
+        } finally {
+            try {
+                con.setAutoCommit(true);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

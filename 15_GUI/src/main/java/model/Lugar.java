@@ -6,12 +6,12 @@ package model;
 public class Lugar {
     //ATRIBUTOS
     private int id_L;
-    private int cod_Post;
+    private String cod_Post;
     private String ciudad;
     private String ubicacion;
 
     //CONSTRUCTRO con parametros (no necesito constructor vacio)
-    public Lugar(int id_L,int cod_Post,String ciudad,String ubicacion){
+    public Lugar(int id_L,String cod_Post,String ciudad,String ubicacion){
         this.id_L = id_L;
         this.cod_Post = cod_Post;
         this.ciudad = ciudad;
@@ -35,11 +35,11 @@ public class Lugar {
         this.ciudad = ciudad;
     }
 
-    public int getCod_Post() {
+    public String getCod_Post() {
         return cod_Post;
     }
 
-    public void setCod_Post(int cod_Post) {
+    public void setCod_Post(String cod_Post) {
         this.cod_Post = cod_Post;
     }
 

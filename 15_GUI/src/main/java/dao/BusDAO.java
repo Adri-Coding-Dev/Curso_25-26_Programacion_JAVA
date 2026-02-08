@@ -1,7 +1,6 @@
 package dao;
 
 import model.Bus;
-import utils.Utils;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -11,158 +10,138 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Clase encargada de desarrollar la logica de los metodos de la tabla BUS
+ * DAO de la entidad Bus.
+ * Encargado exclusivamente del acceso a datos (JDBC).
  */
-
 public class BusDAO {
-    /**
-     * Metodo para listar todos los buses
-     * @param con -> Conexion estatica dentro del programa (definida en el el main)
-     * @return -> Lista con todos los buses o NULL en caso de que la lista este vacia
-     */
-    public static List<Bus> mostrarTodosLosBuses(Connection con){
-        String consulta = "SELECT * FROM Bus"; //Consulta
-        try{
-            //Preparamos la consulta para evitar Inyeccion SQL
-            PreparedStatement ps = con.prepareStatement(consulta);
-            //Ejecutamos la consulta y lo guardamos en un ResultSet -> Como una lista con los registros
-            ResultSet rs = ps.executeQuery();
-            List<Bus> buses = new ArrayList<>();
-            //Mientras haya registros...
-            while(rs.next()){
-                //Guardamos los datos en variables
-                String id_bus = rs.getString(1);
-                String tipo = rs.getString(2);
-                String licencia = rs.getString(3);
-                //Creamos un bus y lo agregamos a la lista
-                buses.add(new Bus(id_bus,tipo,licencia));
-            }
-            return buses;
-        }catch (SQLException e){
-            e.printStackTrace();//Error en la consulta
-        }
-        return null;
-    }
 
-    /**
-     * Metodo para insertar un Bus
-     * @param con -> Conexion estatica dentro del programa (definida en main)
-     * @return -> TRUE si se ha insertado el BUS correctamente | FALSE si NO se ha insertado el BUS
-     */
-    public static boolean insertarBus(Connection con){
-        String consulta = "INSERT INTO Bus ( Id_B, Tipo, Licencia) VALUES ( ?, ?, ?);";//Consulta
-        try{
-            //Preparamos la consulta
-            PreparedStatement ps = con.prepareStatement(consulta);
-            //Pedimos al usuario los datos
-            ps.setString(1, Utils.pedirCadenaAlUsuario("Introduce un Id del Bus (BXXX): "));
-            ps.setString(2,Utils.pedirCadenaAlUsuario("Introduce un tipo del Bus [Urbano/Interurbano/Turismo/Escolar]: "));
-            ps.setString(3, Utils.pedirCadenaAlUsuario("Introude una licencia para el Bus (LICXXX): "));
-            //Ejecutamos la consulta con los parametros del usuario
-            int registrosAlterados = ps.executeUpdate();
+    /* ===========================
+       LISTAR TODOS
+       =========================== */
+    public static List<Bus> findAll(Connection con) {
+        String sql = "SELECT Id_B, Tipo, Licencia FROM Bus";
+        List<Bus> buses = new ArrayList<>();
 
-            return registrosAlterados==1; //Devuelve TRUE si registros alterados es 1 (se ha tramitado bien la consulta)
-        }catch(SQLException e){
-            e.printStackTrace();
-        }
-        return false; //En caso de que no se haya alterado ningun registro (no se ha insertado nada)
-    }
+        try (PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
 
-
-    /**
-     * Metodo para borrar un BUS
-     * @param con -> Conexion estatica dentro del programa (definida en main)
-     * @param id_Bus -> ID del Bus que queramos borrar
-     * @return -> Numero de registros alterados (2 es lo normal, porque borramos de dos tablas*)
-     * @throws SQLException -> En caso de que haya fallos en la consulta
-     */
-    public static int borrarBus(Connection con, String id_Bus) throws SQLException {
-        String consulta1 = "DELETE FROM Bus WHERE Id_B = ?;"; //Consulta dentro de la Tabla BUS
-        String consulta2 = "DELETE FROM BCL WHERE Id_B = ?;"; //Consulta dentro de la TABLA BCL -> *Tiene Clave Foranea
-        int registrosAlterados = 0;
-        try {
-            //Para que no se ejecute la consulta (por temas de integridad de la consulta)
-            con.setAutoCommit(false);
-
-            //Preparamos la primera consulta y la ejecutamos
-            try(PreparedStatement ps = con.prepareStatement(consulta1)){
-                ps.setString(1,id_Bus);
-                registrosAlterados += ps.executeUpdate();
-            }
-
-            //Preparamos la segunda consulta y la ejecutamos
-            try(PreparedStatement ps = con.prepareStatement(consulta2)){
-                ps.setString(1,id_Bus);
-                registrosAlterados += ps.executeUpdate();
-            }
-
-            //En caso de que no haya fallos en ninguna consulta, se realiza sobre la BBDD
-            con.commit();
-            return registrosAlterados;
-
-        }catch (SQLException e){
-            e.printStackTrace();
-            //En caso de que haya fallos, se restablece la consulta (no se tramita)
-            con.rollback();
-        }finally{
-            //Volvemos al flujo de antes
-            con.setAutoCommit(true);
-        }
-
-        return 0;
-    }
-
-    /**
-     * Metodo para editar un BUS
-     * @param con -> Conexion estatica dentro del programa (definida en main)
-     * @param id_Bus -> ID del Bus que queramos editar
-     * @return -> Numero de registros alterados
-     */
-    public static int editarBus(Connection con,String id_Bus){
-        String consulta = "UPDATE Bus SET Tipo = ?, Licencia = ? WHERE Id_B = ?";//Consulta
-        try{
-            //Preparamos la consulta
-            PreparedStatement ps = con.prepareStatement(consulta);
-            //Pedimos los datos al usuario
-            ps.setString(1,Utils.pedirCadenaAlUsuario("Introduce el nuevo tipo de Bus [Urbano/Interurbano/Turismo/Escolar]: "));
-            ps.setString(2, Utils.pedirCadenaAlUsuario("Introduce la nueva licencia para el Bus"));
-            ps.setString(3,id_Bus);
-            //Ejecutamos la consulta y devolvemos los registros
-            return ps.executeUpdate();
-
-        }catch (SQLException e){
-            e.printStackTrace();
-        }
-
-        return 0;
-    }
-
-    /**
-     * Metodo para buscar un BUS
-     * @param con -> Conexion estatica dentro del programa (definida en main)
-     * @param id_Bus -> ID del Bus que queramos borrar
-     * @return -> El registro completo en forma de BUS
-     */
-    public static Bus buscarBus(Connection con,String id_Bus){
-        String consulta = "SELECT * FROM Bus WHERE Id_B = ?;";//Consulta
-        try{
-            //Preparamos la consulta
-            PreparedStatement ps = con.prepareStatement(consulta);
-            ps.setString(1, id_Bus);
-            //Ejecutamos la consulta
-            ResultSet rs = ps.executeQuery();
-            //Si hay algo(Bus encontrado), guardamos sus datos
-            if(rs.next()){
-                String id_B = rs.getString(1);
-                String tipo = rs.getString(2);
-                String licencia = rs.getString(3);
-                //Devolvemos el Bus con los datos guardados
-                return new Bus(id_B,tipo,licencia);
+            while (rs.next()) {
+                buses.add(new Bus(
+                        rs.getString("Id_B"),
+                        rs.getString("Tipo"),
+                        rs.getString("Licencia")
+                ));
             }
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
+        return buses; // NUNCA null
+    }
+
+    /* ===========================
+       BUSCAR POR ID
+       =========================== */
+    public static Bus findById(Connection con, String idBus) {
+        String sql = "SELECT Id_B, Tipo, Licencia FROM Bus WHERE Id_B = ?";
+
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, idBus);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new Bus(
+                            rs.getString("Id_B"),
+                            rs.getString("Tipo"),
+                            rs.getString("Licencia")
+                    );
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
         return null;
+    }
+
+    /* ===========================
+       INSERTAR
+       =========================== */
+    public static boolean insert(Connection con, Bus bus) {
+        String sql = "INSERT INTO Bus (Id_B, Tipo, Licencia) VALUES (?, ?, ?)";
+
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, bus.getId_bus());
+            ps.setString(2, bus.getTipo());
+            ps.setString(3, bus.getLicencia());
+
+            return ps.executeUpdate() == 1;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /* ===========================
+       ACTUALIZAR
+       =========================== */
+    public static boolean update(Connection con, Bus bus) {
+        String sql = "UPDATE Bus SET Tipo = ?, Licencia = ? WHERE Id_B = ?";
+
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, bus.getTipo());
+            ps.setString(2, bus.getLicencia());
+            ps.setString(3, bus.getId_bus());
+
+            return ps.executeUpdate() == 1;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /* ===========================
+       BORRAR (con transacción)
+       =========================== */
+    public static boolean delete(Connection con, String idBus) {
+        String sqlBus = "DELETE FROM Bus WHERE Id_B = ?";
+        String sqlBcl = "DELETE FROM BCL WHERE Id_B = ?";
+
+        try {
+            con.setAutoCommit(false);
+
+            try (PreparedStatement ps1 = con.prepareStatement(sqlBcl);
+                 PreparedStatement ps2 = con.prepareStatement(sqlBus)) {
+
+                ps1.setString(1, idBus);
+                ps1.executeUpdate();
+
+                ps2.setString(1, idBus);
+                int afectados = ps2.executeUpdate();
+
+                con.commit();
+                return afectados == 1;
+            }
+
+        } catch (SQLException e) {
+            try {
+                con.rollback();
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+            e.printStackTrace();
+            return false;
+
+        } finally {
+            try {
+                con.setAutoCommit(true);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
