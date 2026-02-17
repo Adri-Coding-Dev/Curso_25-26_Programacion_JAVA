@@ -36,7 +36,7 @@ public class PrincipalView extends JFrame {
     private JTable tabla;
 
     // ===== SELECTOR ENTIDAD =====
-    private final JComboBox<String> cbEntidad = new JComboBox<>(new String[]{"Buses", "Conductores", "Lugares"});
+    private static final JComboBox<String> cbOpciones = new JComboBox<>(new String[]{"Buses", "Conductores", "Lugares"});
 
     // ===== CONEXIÓN =====
     private final Connection con;
@@ -81,10 +81,10 @@ public class PrincipalView extends JFrame {
         }
 
         // ComboBox selector entidad
-        cbEntidad.setBackground(Color.WHITE);
+        cbOpciones.setBackground(Color.WHITE);
         top.add(Box.createHorizontalStrut(20));
         top.add(new JLabel("Seleccionar entidad:"));
-        top.add(cbEntidad);
+        top.add(cbOpciones);
 
         // Label entidad
         lblEntidad.setForeground(Color.WHITE);
@@ -116,10 +116,28 @@ public class PrincipalView extends JFrame {
 
     // ===== TABLA CENTRAL =====
     private void initTable() {
-        tmdl = new DefaultTableModel(new String[]{"ID", "Tipo", "Licencia"}, 0) {
-            @Override
-            public boolean isCellEditable(int row, int col) { return false; }
-        };
+        if (cbOpciones.getSelectedItem().equals("Buses")) {
+            tmdl = new DefaultTableModel(new String[]{"ID", "Tipo", "Licencia"}, 0) {
+                @Override
+                public boolean isCellEditable(int row, int col) {
+                    return false;
+                }
+            };
+        }else if (cbOpciones.getSelectedItem().equals("Conductores")){
+            tmdl = new DefaultTableModel(new String[]{"ID", "Nombre", "Apellidos"}, 0) {
+                @Override
+                public boolean isCellEditable(int row, int col) {
+                    return false;
+                }
+            };
+        }else if (cbOpciones.getSelectedItem().equals("Lugares")){
+            tmdl = new DefaultTableModel(new String[]{"ID", "Codigo_Postal", "Ciudad", "Ubicacion"}, 0) {
+                @Override
+                public boolean isCellEditable(int row, int col) {
+                    return true;
+                }
+            };
+        }
         tabla = new JTable(tmdl);
 
         // Filas alternadas
@@ -142,28 +160,56 @@ public class PrincipalView extends JFrame {
     // ===== EVENTOS =====
     private void initActions() {
         btnAdd.addActionListener(e -> {
-            if (cbEntidad.getSelectedItem().equals("Buses")) abrirBusDialog();
-            else if (cbEntidad.getSelectedItem().equals("Conductores")) abrirConductorDialog();
-            else if (cbEntidad.getSelectedItem().equals("Lugares")) abrirLugarDialog();
+            if (cbOpciones.getSelectedItem().equals("Buses")){ abrirBusDialog();}
+            else if (cbOpciones.getSelectedItem().equals("Conductores")) abrirConductorDialog();
+            else if (cbOpciones.getSelectedItem().equals("Lugares")) abrirLugarDialog();
         });
 
         btnRefrescar.addActionListener(e -> cargarTablaActual());
 
         btnBorrar.addActionListener(e -> {
-            if (cbEntidad.getSelectedItem().equals("Buses")) borrarBusSeleccionado();
-            else if (cbEntidad.getSelectedItem().equals("Conductores")) borrarConductorSeleccionado();
-            else if (cbEntidad.getSelectedItem().equals("Lugares")) borrarLugarSeleccionado();
+            if (cbOpciones.getSelectedItem().equals("Buses")) borrarBusSeleccionado();
+            else if (cbOpciones.getSelectedItem().equals("Conductores")) borrarConductorSeleccionado();
+            else if (cbOpciones.getSelectedItem().equals("Lugares")) borrarLugarSeleccionado();
         });
 
-        cbEntidad.addActionListener(e -> {
-            lblEntidad.setText("Entidad actual: " + cbEntidad.getSelectedItem());
+        cbOpciones.addActionListener(e -> {
+            lblEntidad.setText("Entidad actual: " + cbOpciones.getSelectedItem());
+            // 1. Crear nuevo modelo con columnas correctas
+            crearModeloSegunEntidad();
+            // 2. Cargar datos
             cargarTablaActual();
         });
     }
 
+    private void crearModeloSegunEntidad() {
+        String entidad = (String) cbOpciones.getSelectedItem();
+        String[] columnas;
+        boolean editable;
+
+        if ("Buses".equals(entidad)) {
+            editable = false;
+            columnas = new String[]{"ID", "Tipo", "Licencia"};
+        } else if ("Conductores".equals(entidad)) {
+            editable = false;
+            columnas = new String[]{"ID", "Nombre", "Apellidos"};
+        } else { // Lugares
+            columnas = new String[]{"ID", "Código Postal", "Ciudad", "Ubicación"};
+            editable = true;
+        }
+
+        tmdl = new DefaultTableModel(columnas, 0) {
+            @Override
+            public boolean isCellEditable(int row, int col) {
+                return editable;
+            }
+        };
+        tabla.setModel(tmdl);
+    }
+
     // ===== FUNCIONALIDAD TABLA =====
     private void cargarTablaActual() {
-        String entidad = (String) cbEntidad.getSelectedItem();
+        String entidad = (String) cbOpciones.getSelectedItem();
         if (entidad.equals("Buses")) {
             cargarBuses();
         }else if (entidad.equals("Conductores")) {
@@ -182,7 +228,6 @@ public class PrincipalView extends JFrame {
         if (buses == null || buses.isEmpty()) {
             return;
         }
-
         for (Bus b : buses) {
             tmdl.addRow(new Object[]{b.getId_bus(), b.getTipo(), b.getLicencia()});
         }
@@ -196,10 +241,10 @@ public class PrincipalView extends JFrame {
         if(conductores == null || conductores.isEmpty()){
             return;
         }
+
         for(Conductor cond : conductores){
             tmdl.addRow(new Object[]{cond.getId_C(), cond.getNombre(), cond.getApellido()});
         }
-
     }
 
     private void cargarLugares(){
@@ -222,6 +267,8 @@ public class PrincipalView extends JFrame {
         if (bus != null) {
             boolean ok = BusDAO.insert(con, bus);
             if (ok) {
+                cbOpciones.setSelectedIndex(0);
+                initTable();
                 cargarBuses();
             } else {
                 JOptionPane.showMessageDialog(this, "No se pudo insertar el bus", "Error", JOptionPane.ERROR_MESSAGE);
@@ -237,6 +284,9 @@ public class PrincipalView extends JFrame {
         if(cond != null){
             boolean ok = ConductorDAO.insert(con, cond);
             if (ok) {
+                cbOpciones.setSelectedIndex(1);
+                System.out.println(cbOpciones.getSelectedItem().toString());
+                initTable();
                 cargarConductores();
             } else {
                 JOptionPane.showMessageDialog(this, "No se pudo insertar el Conductor", "ERROR", JOptionPane.ERROR_MESSAGE);
@@ -252,6 +302,8 @@ public class PrincipalView extends JFrame {
         if(lugar != null){
             boolean ok = LugarDAO.insert(con,lugar);
             if(ok){
+                cbOpciones.setSelectedIndex(2);
+                initTable();
                 cargarLugares();
             }else{
                 JOptionPane.showMessageDialog(this,"No se pudo insertar el Lugar", "ERROR", JOptionPane.ERROR_MESSAGE);

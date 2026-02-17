@@ -15,14 +15,14 @@ public class Main {
     public static void main(String[] args) {
         try {
               Connection con = ConnexionBBDD.getConnection();
-              LoginDialog login = new LoginDialog(null);
-              login.setVisible(true);
-
-            if (login.isAuthenticated()) {
-                PrincipalView pv = new PrincipalView(con);
-            } else {
-                System.exit(0); // usuario canceló o falló login
-            }
+//              LoginDialog login = new LoginDialog(null);
+//              login.setVisible(true);
+//
+//            if (login.isAuthenticated()) {
+                  PrincipalView pv = new PrincipalView(con);
+//            } else {
+//                System.exit(0); // usuario canceló o falló login
+//            }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(
                     null,
@@ -30,6 +30,7 @@ public class Main {
                     "Error",
                     JOptionPane.ERROR_MESSAGE
             );
+            e.printStackTrace();
         }
     }
 }
