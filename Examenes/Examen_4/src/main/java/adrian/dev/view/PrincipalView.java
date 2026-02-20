@@ -1,24 +1,28 @@
-package ui;
+package adrian.dev.view;
 
-import dao.BusDAO;
-import dao.ConductorDAO;
-import dao.LugarDAO;
-import model.*;
-import ui.dialogs.BusDialog;
-import ui.dialogs.ConductorDialog;
-import ui.dialogs.LugarDialog;
+//Clases del proyecto
+import adrian.dev.controller.dao.BusDAO;
+import adrian.dev.model.*;
+import adrian.dev.view.dialogs.BusDialog;
+import adrian.dev.app.utils.Utils;
+import adrian.dev.view.enums.BusDialogMode;
 
+//Clases de Swing
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.sql.Connection;
 import java.util.List;
 
-public class PrincipalView extends JFrame {
 
-    // ===== BOTONES COMPARTIDOS =====
+public class PrincipalView extends JFrame {
+    //ATRIBUTOS
+
+    // ===== BOTONES =====
     private final JButton btnAdd = new JButton("Añadir");
     private final JButton btnBuscar = new JButton("Buscar");
     private final JButton btnBorrar = new JButton("Borrar");
@@ -31,38 +35,37 @@ public class PrincipalView extends JFrame {
     private DefaultTableModel modelBuses, modelConductores, modelLugares;
 
     // ===== ETIQUETA DE ESTADO =====
-    private final JLabel lblEstado = new JLabel("Invitame a un café ☕. BBDD Utilizada: " + utils.Utils.sacarNombreBBDD());
+    private final JLabel lblEstado = new JLabel("Listo " + Utils.mostrarFechaFormateada());
 
     // ===== CONEXIÓN =====
     private final Connection con;
 
     // ===== PALETA DE COLORES MODO OSCURO =====
-    private final Color colorFondo = Color.decode("#121212");       // Fondo general muy oscuro
-    private final Color colorToolbar = Color.decode("#1E1E1E");     // Barra de herramientas ligeramente más clara
-    private final Color colorBotones = Color.decode("#2D2D2D");     // Botones gris medio oscuro
-    private final Color colorTextoBoton = Color.WHITE;              // Texto blanco
-    private final Color colorTablaFondo = Color.decode("#1E1E1E");  // Fondo de la tabla
-    private final Color colorTablaAlt = Color.decode("#2D2D2D");    // Filas alternadas
-    private final Color colorTexto = Color.decode("#E0E0E0");       // Texto general claro
-    private final Color colorBorde = Color.decode("#444444");       // Bordes sutiles
+    private final Color colorFondo = Color.decode("#121212");
+    private final Color colorToolbar = Color.decode("#1E1E1E");
+    private final Color colorBotones = Color.decode("#2D2D2D");
+    private final Color colorTextoBoton = Color.WHITE;
+    private final Color colorTablaFondo = Color.decode("#1E1E1E");
+    private final Color colorTablaAlt = Color.decode("#2D2D2D");
+    private final Color colorTexto = Color.decode("#E0E0E0");
+    private final Color colorBorde = Color.decode("#444444");
 
     // ===== CONSTRUCTOR =====
     public PrincipalView(Connection con) {
         this.con = con;
-        setTitle("Gestión de Aucorsa");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setTitle("AUCORSA – Buses");
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setSize(1000, 600);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
         getContentPane().setBackground(colorFondo);
-
         initToolbar();
         initTabbedPane();
         initBottomPanel();
 
         cargarBuses();
-        cargarConductores();
-        cargarLugares();
+
+        activarListenerCerrar();
 
         setVisible(true);
     }
@@ -72,14 +75,13 @@ public class PrincipalView extends JFrame {
         JToolBar toolBar = new JToolBar();
         toolBar.setFloatable(false);
         toolBar.setBackground(colorToolbar);
-        toolBar.setBorder(Bor   derFactory.createMatteBorder(0, 0, 1, 0, colorBorde));
+        toolBar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, colorBorde));
 
         JButton[] botones = {btnAdd, btnBuscar, btnBorrar, btnEditar, btnRefrescar};
         for (JButton b : botones) {
             b.setBackground(colorBotones);
             b.setForeground(colorTextoBoton);
             b.setFocusPainted(false);
-            b.setFont(b.getFont().deriveFont(Font.BOLD));
             b.setBorder(BorderFactory.createCompoundBorder(
                     BorderFactory.createLineBorder(colorBorde),
                     BorderFactory.createEmptyBorder(8, 15, 8, 15)
@@ -100,7 +102,6 @@ public class PrincipalView extends JFrame {
     // ===== PANEL DE PESTAÑAS =====
     private void initTabbedPane() {
         tabbedPane = new JTabbedPane();
-        tabbedPane.setFont(tabbedPane.getFont().deriveFont(Font.BOLD));
         tabbedPane.setBackground(colorFondo);
         tabbedPane.setForeground(colorTexto); // Color por defecto para todas las pestañas
         tabbedPane.setBorder(BorderFactory.createLineBorder(colorBorde));
@@ -110,13 +111,10 @@ public class PrincipalView extends JFrame {
         tableBuses = crearTabla(modelBuses);
         tabbedPane.addTab("Buses", crearPanelConTabla(tableBuses));
 
+        //Crear Pestaña Conductor (No efecto)
         modelConductores = crearModelo(new String[]{"ID", "Nombre", "Apellidos"});
         tableConductores = crearTabla(modelConductores);
         tabbedPane.addTab("Conductores", crearPanelConTabla(tableConductores));
-
-        modelLugares = crearModelo(new String[]{"ID", "Código Postal", "Ciudad", "Ubicación"});
-        tableLugares = crearTabla(modelLugares);
-        tabbedPane.addTab("Lugares", crearPanelConTabla(tableLugares));
 
         // Listener para cambiar el color del texto de la pestaña seleccionada a blanco
         tabbedPane.addChangeListener(e -> {
@@ -151,13 +149,12 @@ public class PrincipalView extends JFrame {
         tabla.setForeground(colorTexto);
         tabla.setSelectionBackground(colorBotones);
         tabla.setSelectionForeground(Color.WHITE);
-        tabla.setBorder(BorderFactory.createLineBorder(colorBorde));
+        tabla.setBorder(BorderFactory.createLineBorder(Color.WHITE));
 
         // Cabecera de la tabla
         JTableHeader header = tabla.getTableHeader();
         header.setBackground(colorToolbar);
         header.setForeground(colorTexto);
-        header.setFont(header.getFont().deriveFont(Font.BOLD));
 
         // Renderer para filas alternadas y colores de texto/fondo
         tabla.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
@@ -176,7 +173,6 @@ public class PrincipalView extends JFrame {
                 return c;
             }
         });
-
         return tabla;
     }
 
@@ -203,27 +199,7 @@ public class PrincipalView extends JFrame {
         List<Bus> buses = BusDAO.findAll(con);
         if (buses != null) {
             for (Bus b : buses) {
-                modelBuses.addRow(new Object[]{b.getId_bus(), b.getTipo(), b.getLicencia()});
-            }
-        }
-    }
-
-    private void cargarConductores() {
-        modelConductores.setRowCount(0);
-        List<Conductor> conductores = ConductorDAO.findAll(con);
-        if (conductores != null) {
-            for (Conductor c : conductores) {
-                modelConductores.addRow(new Object[]{c.getId_C(), c.getNombre(), c.getApellido()});
-            }
-        }
-    }
-
-    private void cargarLugares() {
-        modelLugares.setRowCount(0);
-        List<Lugar> lugares = LugarDAO.findAll(con);
-        if (lugares != null) {
-            for (Lugar l : lugares) {
-                modelLugares.addRow(new Object[]{l.getId_L(), l.getCod_Post(), l.getCiudad(), l.getUbicacion()});
+                modelBuses.addRow(new Object[]{b.getId_Bus(), b.getTipo(), b.getLicencia()});
             }
         }
     }
@@ -256,42 +232,24 @@ public class PrincipalView extends JFrame {
     private void refrescarTablaActiva() {
         switch (getEntidadActiva()) {
             case "Buses": cargarBuses(); break;
-            case "Conductores": cargarConductores(); break;
-            case "Lugares": cargarLugares(); break;
         }
     }
 
     // ===== ACCIONES DE BOTONES =====
     private void accionAdd() {
-        switch (getEntidadActiva()) {
-            case "Buses" -> abrirBusCreate();
-            case "Conductores" -> abrirConductorCreate();
-            case "Lugares" -> abrirLugarCreate();
-        }
+        abrirBusCreate();
     }
 
     private void accionBuscar() {
-        switch (getEntidadActiva()) {
-            case "Buses" -> abrirBusSearch();
-            case "Conductores" -> abrirConductorSearch();
-            case "Lugares" -> abrirLugarSearch();
-        }
+        abrirBusSearch();
     }
 
     private void accionEditar() {
-        switch (getEntidadActiva()) {
-            case "Buses" -> abrirBusEdit();
-            case "Conductores" -> abrirConductorEdit();
-            case "Lugares" -> abrirLugarEdit();
-        }
+        abrirBusEdit();
     }
 
     private void accionBorrar() {
-        switch (getEntidadActiva()) {
-            case "Buses" -> borrarBusSeleccionado();
-            case "Conductores" -> borrarConductorSeleccionado();
-            case "Lugares" -> borrarLugarSeleccionado();
-        }
+        borrarBusSeleccionado();
     }
 
     // ===== OPERACIONES PARA BUS =====
@@ -328,10 +286,10 @@ public class PrincipalView extends JFrame {
         dialog.setVisible(true);
         Bus criterio = dialog.getBus();
         if (criterio != null) {
-            Bus encontrado = BusDAO.findById(con, criterio.getId_bus());
+            Bus encontrado = BusDAO.findById(con, criterio.getId_Bus());
             if (encontrado != null) {
                 modelBuses.setRowCount(0);
-                modelBuses.addRow(new Object[]{encontrado.getId_bus(), encontrado.getTipo(), encontrado.getLicencia()});
+                modelBuses.addRow(new Object[]{encontrado.getId_Bus(), encontrado.getTipo(), encontrado.getLicencia()});
             } else {
                 mostrarInfo("No se encontró el bus");
             }
@@ -352,122 +310,43 @@ public class PrincipalView extends JFrame {
         }
     }
 
-    // ===== OPERACIONES PARA CONDUCTOR =====
-    private void abrirConductorCreate() {
-        ConductorDialog dialog = new ConductorDialog(this, ConductorDialogMode.CREATE, null);
-        dialog.setVisible(true);
-        Conductor c = dialog.getConductor();
-        if (c != null && ConductorDAO.insert(con, c)) {
-            cargarConductores();
-        }
-    }
-
-    private void abrirConductorEdit() {
-        int fila = tableConductores.getSelectedRow();
-        if (fila == -1) {
-            mostrarAviso("Selecciona un conductor para editar");
-            return;
-        }
-        Conductor existente = new Conductor(
-                (int) modelConductores.getValueAt(fila, 0),
-                (String) modelConductores.getValueAt(fila, 1),
-                (String) modelConductores.getValueAt(fila, 2)
-        );
-        ConductorDialog dialog = new ConductorDialog(this, ConductorDialogMode.EDIT, existente);
-        dialog.setVisible(true);
-        Conductor actualizado = dialog.getConductor();
-        if (actualizado != null && ConductorDAO.update(con, actualizado)) {
-            cargarConductores();
-        }
-    }
-
-    private void abrirConductorSearch() {
-        ConductorDialog dialog = new ConductorDialog(this, ConductorDialogMode.SEARCH, null);
-        dialog.setVisible(true);
-        Conductor criterio = dialog.getConductor();
-        if (criterio != null) {
-            Conductor encontrado = ConductorDAO.findById(con, criterio.getId_C());
-            if (encontrado != null) {
-                modelConductores.setRowCount(0);
-                modelConductores.addRow(new Object[]{encontrado.getId_C(), encontrado.getNombre(), encontrado.getApellido()});
-            } else {
-                mostrarInfo("No se encontró el conductor");
+    private void activarListenerCerrar(){
+        addWindowListener(new WindowListener() {
+            @Override
+            public void windowOpened(WindowEvent e) {
             }
-        }
-    }
 
-    private void borrarConductorSeleccionado() {
-        int fila = tableConductores.getSelectedRow();
-        if (fila == -1) {
-            mostrarAviso("Selecciona un conductor de la tabla");
-            return;
-        }
-        int idC = (int) modelConductores.getValueAt(fila, 0);
-        if (confirmar("¿Eliminar el conductor " + idC + "?")) {
-            if (ConductorDAO.delete(con, idC)) {
-                cargarConductores();
+            @Override
+            public void windowClosing(WindowEvent e) {
+                int status = cerrarApp("¿Seguro que quieres cerrar?");
+                int contador = 0;
+                String seguro = "estas seguro de que ";
+                do{
+                    cerrarApp("¿Estas seguro de que " + seguro.repeat(contador) + "quieres salir?");
+                    contador ++;
+                }while(status == 0);
             }
-        }
-    }
 
-    // ===== OPERACIONES PARA LUGAR =====
-    private void abrirLugarCreate() {
-        LugarDialog dialog = new LugarDialog(this, LugarDialogMode.CREATE, null);
-        dialog.setVisible(true);
-        Lugar l = dialog.getLugar();
-        if (l != null && LugarDAO.insert(con, l)) {
-            cargarLugares();
-        }
-    }
-
-    private void abrirLugarEdit() {
-        int fila = tableLugares.getSelectedRow();
-        if (fila == -1) {
-            mostrarAviso("Selecciona un lugar para editar");
-            return;
-        }
-        Lugar existente = new Lugar(
-                (int) modelLugares.getValueAt(fila, 0),
-                (String) modelLugares.getValueAt(fila, 1),
-                (String) modelLugares.getValueAt(fila, 2),
-                (String) modelLugares.getValueAt(fila, 3)
-        );
-        LugarDialog dialog = new LugarDialog(this, LugarDialogMode.EDIT, existente);
-        dialog.setVisible(true);
-        Lugar actualizado = dialog.getLugar();
-        if (actualizado != null && LugarDAO.update(con, actualizado)) {
-            cargarLugares();
-        }
-    }
-
-    private void abrirLugarSearch() {
-        LugarDialog dialog = new LugarDialog(this, LugarDialogMode.SEARCH, null);
-        dialog.setVisible(true);
-        Lugar criterio = dialog.getLugar();
-        if (criterio != null) {
-            Lugar encontrado = LugarDAO.findById(con, criterio.getId_L());
-            if (encontrado != null) {
-                modelLugares.setRowCount(0);
-                modelLugares.addRow(new Object[]{encontrado.getId_L(), encontrado.getCod_Post(), encontrado.getCiudad(), encontrado.getUbicacion()});
-            } else {
-                mostrarInfo("No se encontró el lugar");
+            @Override
+            public void windowClosed(WindowEvent e) {
+                int status = cerrarApp("¿Seguro que quieres cerrar?");
+                if (status == 0) ;
             }
-        }
+            @Override
+            public void windowIconified(WindowEvent e) {
+            }
+            @Override
+            public void windowDeiconified(WindowEvent e) {
+            }
+            @Override
+            public void windowActivated(WindowEvent e) {
+            }
+            @Override
+            public void windowDeactivated(WindowEvent e) {
+            }
+        });
     }
 
-    private void borrarLugarSeleccionado() {
-        int fila = tableLugares.getSelectedRow();
-        if (fila == -1) {
-            mostrarAviso("Selecciona un lugar de la tabla");
-            return;
-        }
-        int idL = (int) modelLugares.getValueAt(fila, 0);
-        if (confirmar("¿Eliminar el lugar " + idL + "?")) {
-            if (LugarDAO.delete(con, idL)) {
-                cargarLugares();
-            }
-        }
-    }
 
     // ===== MÉTODOS DE UTILIDAD PARA DIÁLOGOS =====
     private void mostrarAviso(String mensaje) {
@@ -480,5 +359,13 @@ public class PrincipalView extends JFrame {
 
     private boolean confirmar(String pregunta) {
         return JOptionPane.showConfirmDialog(this, pregunta, "Confirmar", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
+    }
+
+    private int cerrarApp(String pregunta){
+        boolean cerrar = JOptionPane.showConfirmDialog(this, pregunta, "Salir?", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
+        if(cerrar){
+            return 0;
+        }
+        return 2;
     }
 }

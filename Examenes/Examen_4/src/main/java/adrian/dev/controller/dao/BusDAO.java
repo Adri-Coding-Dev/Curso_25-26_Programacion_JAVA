@@ -1,6 +1,6 @@
-package dao;
+package adrian.dev.controller.dao;
 
-import model.Conductor;
+import adrian.dev.model.Bus;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -10,24 +10,26 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Clase encargada de la logica del Conductor
+ * DAO de la entidad Bus.
+ * Encargado exclusivamente del acceso a datos (JDBC).
  */
-public class ConductorDAO {
+public class BusDAO {
+
     /* ===========================
        LISTAR TODOS
        =========================== */
-    public static List<Conductor> findAll(Connection con) {
-        String sql = "SELECT Id_C, Nombre, Apellido FROM Conductor;";
-        List<Conductor> conductores = new ArrayList<>();
+    public static List<Bus> findAll(Connection con) {
+        String sql = "SELECT Id_B, Tipo, Licencia FROM Bus";
+        List<Bus> buses = new ArrayList<>();
 
         try (PreparedStatement ps = con.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-                conductores.add(new Conductor(
-                        rs.getInt("Id_C"),
-                        rs.getString("Nombre"),
-                        rs.getString("Apellido")
+                buses.add(new Bus(
+                        rs.getString("Id_B"),
+                        rs.getString("Tipo"),
+                        rs.getString("Licencia")
                 ));
             }
 
@@ -35,24 +37,24 @@ public class ConductorDAO {
             e.printStackTrace();
         }
 
-        return conductores; // NUNCA null
+        return buses; // NUNCA null
     }
 
     /* ===========================
        BUSCAR POR ID
        =========================== */
-    public static Conductor findById(Connection con, int idC) {
-        String sql = "SELECT * FROM Conductor WHERE Id_C = ?";
+    public static Bus findById(Connection con, String idBus) {
+        String sql = "SELECT Id_B, Tipo, Licencia FROM Bus WHERE Id_B = ?";
 
         try (PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, idC);
+            ps.setString(1, idBus);
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return new Conductor(
-                            rs.getInt("Id_C"),
-                            rs.getString("Nombre"),
-                            rs.getString("Apellido")
+                    return new Bus(
+                            rs.getString("Id_B"),
+                            rs.getString("Tipo"),
+                            rs.getString("Licencia")
                     );
                 }
             }
@@ -67,13 +69,13 @@ public class ConductorDAO {
     /* ===========================
        INSERTAR
        =========================== */
-    public static boolean insert(Connection con, Conductor conductor) {
-        String sql = "INSERT INTO Conductor (Id_C, Nombre, Apellido) VALUES (?, ?, ?)";
+    public static boolean insert(Connection con, Bus bus) {
+        String sql = "INSERT INTO Bus (Id_B, Tipo, Licencia) VALUES (?, ?, ?)";
 
         try (PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, conductor.getId_C());
-            ps.setString(2, conductor.getNombre());
-            ps.setString(3, conductor.getApellido());
+            ps.setString(1, bus.getId_Bus());
+            ps.setString(2, bus.getTipo());
+            ps.setString(3, bus.getLicencia());
 
             return ps.executeUpdate() == 1;
 
@@ -86,14 +88,13 @@ public class ConductorDAO {
     /* ===========================
        ACTUALIZAR
        =========================== */
-    public static boolean update(Connection con, Conductor conductor) {
-        // Corrección: ahora actualiza la tabla Conductor, no Bus
-        String sql = "UPDATE Conductor SET Nombre = ?, Apellido = ? WHERE Id_C = ?";
+    public static boolean update(Connection con, Bus bus) {
+        String sql = "UPDATE Bus SET Tipo = ?, Licencia = ? WHERE Id_B = ?";
 
         try (PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, conductor.getNombre());
-            ps.setString(2, conductor.getApellido());
-            ps.setInt(3, conductor.getId_C());
+            ps.setString(1, bus.getTipo());
+            ps.setString(2, bus.getLicencia());
+            ps.setString(3, bus.getId_Bus());
 
             return ps.executeUpdate() == 1;
 
@@ -106,20 +107,20 @@ public class ConductorDAO {
     /* ===========================
        BORRAR (con transacción)
        =========================== */
-    public static boolean delete(Connection con, int idC) {
-        String sqlCond = "DELETE FROM Conductor WHERE Id_C = ?";
-        String sqlBcl = "DELETE FROM BCL WHERE Id_C = ?";
+    public static boolean delete(Connection con, String idBus) {
+        String sqlBus = "DELETE FROM Bus WHERE Id_B = ?";
+        String sqlBcl = "DELETE FROM BCL WHERE Id_B = ?";
 
         try {
             con.setAutoCommit(false);
 
             try (PreparedStatement ps1 = con.prepareStatement(sqlBcl);
-                 PreparedStatement ps2 = con.prepareStatement(sqlCond)) {
+                 PreparedStatement ps2 = con.prepareStatement(sqlBus)) {
 
-                ps1.setInt(1, idC);
+                ps1.setString(1, idBus);
                 ps1.executeUpdate();
 
-                ps2.setInt(1, idC);
+                ps2.setString(1, idBus);
                 int afectados = ps2.executeUpdate();
 
                 con.commit();

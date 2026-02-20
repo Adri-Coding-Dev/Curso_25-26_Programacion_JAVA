@@ -1,7 +1,7 @@
 package ui.dialogs;
 
-import model.Bus;
 import model.Conductor;
+import model.ConductorDialogMode;
 
 import javax.swing.*;
 import java.awt.*;
@@ -12,19 +12,32 @@ public class ConductorDialog extends JDialog {
     private JTextField txtNombre;
     private JTextField txtApellido;
 
-    private Conductor cond; // Resultado del diálogo
+    private JButton btnConfirm;
+    private JButton btnCancelar;
 
-    public ConductorDialog(Frame parent) {
-        super(parent, "Nuevo Conductor", true);
+    private ConductorDialogMode mode;
+    private Conductor conductor; // Resultado
+
+    private final Color colorBotones = Color.decode("#42A5F5");
+
+    public ConductorDialog(Frame parent, ConductorDialogMode mode, Conductor existing) {
+        super(parent, true);
+        this.mode = mode;
+
         initComponents();
+        configureByMode();
+
+        if (existing != null) {
+            loadConductorData(existing);
+        }
+
         setLocationRelativeTo(parent);
     }
 
     private void initComponents() {
-        setLayout(new BorderLayout(10, 10));
+        setLayout(new BorderLayout(20, 20));
 
-        // ===== Panel de campos =====
-        JPanel formPanel = new JPanel(new GridLayout(3, 2, 5, 5));
+        JPanel formPanel = new JPanel(new GridLayout(3, 2, 10, 10));
 
         formPanel.add(new JLabel("ID Conductor:"));
         txtId = new JTextField();
@@ -40,25 +53,58 @@ public class ConductorDialog extends JDialog {
 
         add(formPanel, BorderLayout.CENTER);
 
-        // ===== Panel de botones =====
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 
-        JButton btnGuardar = new JButton("Guardar");
-        JButton btnCancelar = new JButton("Cancelar");
+        btnConfirm = new JButton();
+        btnConfirm.setBackground(colorBotones);
 
-        buttonPanel.add(btnGuardar);
+        btnCancelar = new JButton("Cancelar");
+        btnCancelar.setBackground(colorBotones);
+
+        buttonPanel.add(btnConfirm);
         buttonPanel.add(btnCancelar);
 
         add(buttonPanel, BorderLayout.SOUTH);
 
-        // ===== Eventos =====
-        btnGuardar.addActionListener(e -> guardar());
+        btnConfirm.addActionListener(e -> handleAction());
         btnCancelar.addActionListener(e -> cancelar());
 
         pack();
     }
 
-    private void guardar() {
+    private void configureByMode() {
+        switch (mode) {
+            case CREATE:
+                setTitle("Agregar Conductor");
+                btnConfirm.setText("Guardar");
+                break;
+            case EDIT:
+                setTitle("Editar Conductor");
+                btnConfirm.setText("Actualizar");
+                txtId.setEditable(false);
+                break;
+            case SEARCH:
+                setTitle("Buscar Conductor");
+                btnConfirm.setText("Buscar");
+                txtNombre.setEditable(false);
+                txtApellido.setEditable(false);
+                break;
+        }
+    }
+
+    private void handleAction() {
+        switch (mode) {
+            case CREATE:
+            case EDIT:
+                saveOrUpdate();
+                break;
+            case SEARCH:
+                performSearch();
+                break;
+        }
+    }
+
+    private void saveOrUpdate() {
         if (txtId.getText().isBlank()
                 || txtNombre.getText().isBlank()
                 || txtApellido.getText().isBlank()) {
@@ -72,21 +118,47 @@ public class ConductorDialog extends JDialog {
             return;
         }
 
-        cond = new Conductor(
-                Integer.parseInt(txtId.getText().trim()),
-                txtNombre.getText().trim(),
-                txtApellido.getText().trim()
-        );
+        try {
+            int id = Integer.parseInt(txtId.getText().trim());
+            conductor = new Conductor(
+                    id,
+                    txtNombre.getText().trim(),
+                    txtApellido.getText().trim()
+            );
+            dispose();
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this,
+                    "El ID debe ser un número entero",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
 
-        dispose();
+    private void performSearch() {
+        try {
+            int id = Integer.parseInt(txtId.getText().trim());
+            conductor = new Conductor(id, null, null);
+            dispose();
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this,
+                    "El ID debe ser un número entero",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void loadConductorData(Conductor existing) {
+        txtId.setText(String.valueOf(existing.getId_C()));
+        txtNombre.setText(existing.getNombre());
+        txtApellido.setText(existing.getApellido());
     }
 
     private void cancelar() {
-        cond = null;
+        conductor = null;
         dispose();
     }
 
     public Conductor getConductor() {
-        return cond;
+        return conductor;
     }
 }

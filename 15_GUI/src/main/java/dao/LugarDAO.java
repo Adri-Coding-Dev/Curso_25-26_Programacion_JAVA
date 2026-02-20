@@ -43,7 +43,8 @@ public class LugarDAO {
        BUSCAR POR ID
        =========================== */
     public static Lugar findById(Connection con, int idL) {
-        String sql = "SELECT * FROM Lugar WHERE Id_L = ?";
+        // Corrección: columnas correctas
+        String sql = "SELECT Id_L, Cod_Postal, Ciudad, Ubicacion FROM Lugar WHERE Id_L = ?";
 
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, idL);
@@ -51,10 +52,10 @@ public class LugarDAO {
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return new Lugar(
-                            rs.getInt("Id_C"),
+                            rs.getInt("Id_L"),
                             rs.getString("Cod_Postal"),
-                            rs.getString("Nombre"),
-                            rs.getString("Apellido")
+                            rs.getString("Ciudad"),
+                            rs.getString("Ubicacion")
                     );
                 }
             }
@@ -73,10 +74,10 @@ public class LugarDAO {
         String sql = "INSERT INTO Lugar (Id_L, Cod_Postal, Ciudad, Ubicacion) VALUES (?, ?, ?, ?)";
 
         try (PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1,lugar.getId_L());
+            ps.setInt(1, lugar.getId_L());
             ps.setString(2, lugar.getCod_Post());
             ps.setString(3, lugar.getCiudad());
-            ps.setString(4,lugar.getUbicacion());
+            ps.setString(4, lugar.getUbicacion());
 
             return ps.executeUpdate() == 1;
 

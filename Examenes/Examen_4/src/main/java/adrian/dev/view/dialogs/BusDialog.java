@@ -1,7 +1,7 @@
-package ui.dialogs;
+package adrian.dev.view.dialogs;
 
-import model.Bus;
-import model.BusDialogMode;
+import adrian.dev.model.Bus;
+import adrian.dev.view.enums.BusDialogMode;
 
 import javax.swing.*;
 import java.awt.*;
@@ -131,7 +131,7 @@ public class BusDialog extends JDialog {
         dispose();
     }
     private void loadBusData(Bus existingBus) {
-        txtId.setText(existingBus.getId_bus());
+        txtId.setText(existingBus.getId_Bus());
         txtTipo.setText(existingBus.getTipo());
         txtLicencia.setText(existingBus.getLicencia());
     }
