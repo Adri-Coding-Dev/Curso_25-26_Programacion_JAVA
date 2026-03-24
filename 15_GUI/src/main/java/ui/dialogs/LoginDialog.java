@@ -12,9 +12,9 @@ public class LoginDialog extends JDialog {
     private JPasswordField pfPassword;
 
     // Colores coherentes con PrincipalView
-    private final Color colorFondo = Color.decode("#E3F2FD");
-    private final Color colorBotones = Color.decode("#42A5F5");
-    private final Color colorTextBoton = Color.WHITE;
+    private final Color colorFondo = Color.decode("#0B0B12");
+    private final Color colorBotones = Color.decode("#1E4A8C");
+    private final Color colorTextBoton = Color.decode("#F0F4FA");
 
     public LoginDialog(Frame parent) {
         super(parent, "Login", true); // Modal
@@ -32,11 +32,17 @@ public class LoginDialog extends JDialog {
         center.setBackground(colorFondo);
         center.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        center.add(new JLabel("Usuario:"));
+        JLabel lblUsuario = new JLabel("Usuario: ");
+        lblUsuario.setForeground(colorTextBoton);
+
+        center.add(lblUsuario);
         tfUsuario = new JTextField();
         center.add(tfUsuario);
 
-        center.add(new JLabel("Contraseña:"));
+        JLabel lblPass = new JLabel("Contraseña: ");
+        lblPass.setForeground(colorTextBoton);
+
+        center.add(lblPass);
         pfPassword = new JPasswordField();
         center.add(pfPassword);
 

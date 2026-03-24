@@ -36,15 +36,16 @@ public class PrincipalView extends JFrame {
     // ===== CONEXIÓN =====
     private final Connection con;
 
-    // ===== PALETA DE COLORES MODO OSCURO =====
-    private final Color colorFondo = Color.decode("#121212");       // Fondo general muy oscuro
-    private final Color colorToolbar = Color.decode("#1E1E1E");     // Barra de herramientas ligeramente más clara
-    private final Color colorBotones = Color.decode("#2D2D2D");     // Botones gris medio oscuro
-    private final Color colorTextoBoton = Color.WHITE;              // Texto blanco
-    private final Color colorTablaFondo = Color.decode("#1E1E1E");  // Fondo de la tabla
-    private final Color colorTablaAlt = Color.decode("#2D2D2D");    // Filas alternadas
-    private final Color colorTexto = Color.decode("#E0E0E0");       // Texto general claro
-    private final Color colorBorde = Color.decode("#444444");       // Bordes sutiles
+    // ===== PALETA MODO OSCURO - TONOS NEGROS CON ACENTOS AZULES (PROFESIONAL Y FUTURISTA) =====
+    private final Color colorFondo = Color.decode("#0B0B12");        // Fondo principal: negro con matiz índigo muy sutil
+    private final Color colorSuperficie = Color.decode("#14141F");   // Superficies elevadas (cards, paneles) ligeramente más claras
+    private final Color colorToolbar = Color.decode("#0A1620");      // Barra de herramientas: azul marino casi negro
+    private final Color colorBotones = Color.decode("#1E4A8C");
+    private final Color colorTexto = Color.decode("#F0F4FA"); // Texto principal: blanco azulado suave
+    private final Color colorTextoBoton = Color.decode("#A0B3CC"); // Texto secundario: gris azulado claro
+    private final Color colorBorde = Color.decode("#2A3344");        // Bordes y separadores: azul grisáceo oscuro
+    private final Color colorTablaFondo = Color.decode("#0F0F18");   // Fondo de tabla: muy oscuro
+    private final Color colorTablaAlt = Color.decode("#181F2C");     // Filas alternas: azul muy oscuro
 
     // ===== CONSTRUCTOR =====
     public PrincipalView(Connection con) {
@@ -72,7 +73,7 @@ public class PrincipalView extends JFrame {
         JToolBar toolBar = new JToolBar();
         toolBar.setFloatable(false);
         toolBar.setBackground(colorToolbar);
-        toolBar.setBorder(Bor   derFactory.createMatteBorder(0, 0, 1, 0, colorBorde));
+        toolBar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, colorBorde));
 
         JButton[] botones = {btnAdd, btnBuscar, btnBorrar, btnEditar, btnRefrescar};
         for (JButton b : botones) {

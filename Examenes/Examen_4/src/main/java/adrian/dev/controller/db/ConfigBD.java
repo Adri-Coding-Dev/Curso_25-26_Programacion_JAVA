@@ -6,7 +6,7 @@ package adrian.dev.controller.db;
  */
 public class ConfigBD {
     //Atributos necesarios -> URL de la BBDD | USER propietario de mysql | PASS asociado al usuario
-    private final String URL = "jdbc:mysql://localhost:3306/Mi_Aucorsa";
+    private final String URL = "jdbc:mariadb://localhost:3306/Mi_Aucorsa";
     private final String USER = "root";
     private final String PASS = "root";
 

@@ -21,12 +21,7 @@ public class MainApp {
             PrincipalView pv = new PrincipalView(con);
 
         }catch (SQLException e){
-            JOptionPane.showMessageDialog(
-                    null,
-                    "No se ha podido entablar conexion con la BBDD",
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE
-            );
+            e.printStackTrace();
         }
     }
 }

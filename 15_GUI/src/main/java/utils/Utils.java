@@ -39,7 +39,7 @@ public class Utils {
      */
     public static String sacarNombreBBDD(){
         ConfigDB cf = new ConfigDB();
-        Pattern pattern = Pattern.compile("jdbc:mysql://[^/]+/([^?;]+)"); // REGEX para sacar el nombre de la BBDD
+        Pattern pattern = Pattern.compile("jdbc:mariadb://[^/]+/([^?;]+)"); // REGEX para sacar el nombre de la BBDD
         Matcher matcher = pattern.matcher(cf.getUrl());
         String nombreBBDD = null;
         if (matcher.find()) {
