@@ -6,6 +6,7 @@ import dao.LugarDAO;
 import model.*;
 import ui.dialogs.BusDialog;
 import ui.dialogs.ConductorDialog;
+import ui.dialogs.ConductorPerfilDialog;
 import ui.dialogs.LugarDialog;
 
 import javax.swing.*;
@@ -13,54 +14,75 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.sql.Connection;
 import java.util.List;
 
+/**
+ * Ventana principal de la aplicación de gestión de Aucorsa.
+ *
+ * <p>Presenta tres pestañas (Buses, Conductores, Lugares) con tablas de datos.
+ * Proporciona botones comunes en la barra de herramientas superior para añadir,
+ * buscar, editar, borrar y refrescar registros de la entidad activa.
+ *
+ * <p>En la pestaña de Conductores, el doble clic sobre una fila abre el
+ * {@link ConductorPerfilDialog} con la información detallada del conductor.
+ */
 public class PrincipalView extends JFrame {
 
-    // ===== BOTONES COMPARTIDOS =====
-    private final JButton btnAdd = new JButton("Añadir");
-    private final JButton btnBuscar = new JButton("Buscar");
-    private final JButton btnBorrar = new JButton("Borrar");
-    private final JButton btnEditar = new JButton("Editar");
+    // ===== PALETA MODO OSCURO (tonos negros con acentos azules, profesional y futurista) =====
+
+    private final Color colorFondo      = Color.decode("#0B0B12");
+    private final Color colorSuperficie = Color.decode("#14141F");
+    private final Color colorToolbar    = Color.decode("#0A1620");
+    private final Color colorBotones    = Color.decode("#1E4A8C");
+    private final Color colorTexto      = Color.decode("#F0F4FA");
+    private final Color colorTextoBoton = Color.decode("#A0B3CC");
+    private final Color colorBorde      = Color.decode("#2A3344");
+    private final Color colorTablaFondo = Color.decode("#0F0F18");
+    private final Color colorTablaAlt   = Color.decode("#181F2C");
+
+    // ===== BOTONES COMPARTIDOS DE LA BARRA DE HERRAMIENTAS =====
+
+    private final JButton btnAdd       = new JButton("Añadir");
+    private final JButton btnBuscar    = new JButton("Buscar");
+    private final JButton btnBorrar    = new JButton("Borrar");
+    private final JButton btnEditar    = new JButton("Editar");
     private final JButton btnRefrescar = new JButton("Refrescar");
 
-    // ===== PANEL DE PESTAÑAS =====
+    // ===== PANEL DE PESTAÑAS Y TABLAS =====
+
     private JTabbedPane tabbedPane;
-    private JTable tableBuses, tableConductores, tableLugares;
+    private JTable      tableBuses, tableConductores, tableLugares;
     private DefaultTableModel modelBuses, modelConductores, modelLugares;
 
-    // ===== ETIQUETA DE ESTADO =====
-    private final JLabel lblEstado = new JLabel("Invitame a un café ☕. BBDD Utilizada: " + utils.Utils.sacarNombreBBDD());
+    // ===== BARRA DE ESTADO INFERIOR =====
 
-    // ===== CONEXIÓN =====
+    private final JLabel lblEstado = new JLabel(
+            "Invitame a un café ☕. BBDD Utilizada: " + utils.Utils.sacarNombreBBDD()
+    );
+
+    // ===== CONEXIÓN A BASE DE DATOS =====
+
     private final Connection con;
 
-    // ===== PALETA MODO OSCURO - TONOS NEGROS CON ACENTOS AZULES (PROFESIONAL Y FUTURISTA) =====
-    private final Color colorFondo = Color.decode("#0B0B12");        // Fondo principal: negro con matiz índigo muy sutil
-    private final Color colorSuperficie = Color.decode("#14141F");   // Superficies elevadas (cards, paneles) ligeramente más claras
-    private final Color colorToolbar = Color.decode("#0A1620");      // Barra de herramientas: azul marino casi negro
-    private final Color colorBotones = Color.decode("#1E4A8C");
-    private final Color colorTexto = Color.decode("#F0F4FA"); // Texto principal: blanco azulado suave
-    private final Color colorTextoBoton = Color.decode("#A0B3CC"); // Texto secundario: gris azulado claro
-    private final Color colorBorde = Color.decode("#2A3344");        // Bordes y separadores: azul grisáceo oscuro
-    private final Color colorTablaFondo = Color.decode("#0F0F18");   // Fondo de tabla: muy oscuro
-    private final Color colorTablaAlt = Color.decode("#181F2C");     // Filas alternas: azul muy oscuro
-
     // ===== CONSTRUCTOR =====
+
+    /**
+     * Crea y muestra la ventana principal de la aplicación.
+     *
+     * @param con Conexión activa a la base de datos
+     */
     public PrincipalView(Connection con) {
         this.con = con;
-        setTitle("Gestión de Aucorsa");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1000, 600);
-        setLocationRelativeTo(null);
-        setLayout(new BorderLayout());
-        getContentPane().setBackground(colorFondo);
 
+        configurarVentana();
         initToolbar();
         initTabbedPane();
         initBottomPanel();
 
+        // Cargar datos iniciales de todas las entidades
         cargarBuses();
         cargarConductores();
         cargarLugares();
@@ -68,81 +90,198 @@ public class PrincipalView extends JFrame {
         setVisible(true);
     }
 
+    // ===== CONFIGURACIÓN INICIAL DE LA VENTANA =====
+
+    /** Establece las propiedades básicas del JFrame. */
+    private void configurarVentana() {
+        setTitle("Gestión de Aucorsa");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(1000, 600);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout());
+        getContentPane().setBackground(colorFondo);
+    }
+
     // ===== BARRA DE HERRAMIENTAS SUPERIOR =====
+
+    /**
+     * Construye y añade la barra de herramientas con los botones de acción comunes.
+     * Aplica estilos consistentes a todos los botones y registra los listeners.
+     */
     private void initToolbar() {
         JToolBar toolBar = new JToolBar();
         toolBar.setFloatable(false);
         toolBar.setBackground(colorToolbar);
         toolBar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, colorBorde));
 
+        // Aplicar estilo a todos los botones de la barra
         JButton[] botones = {btnAdd, btnBuscar, btnBorrar, btnEditar, btnRefrescar};
-        for (JButton b : botones) {
-            b.setBackground(colorBotones);
-            b.setForeground(colorTextoBoton);
-            b.setFocusPainted(false);
-            b.setFont(b.getFont().deriveFont(Font.BOLD));
-            b.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createLineBorder(colorBorde),
-                    BorderFactory.createEmptyBorder(8, 15, 8, 15)
-            ));
-            toolBar.add(b);
+        for (JButton btn : botones) {
+            estilizarBoton(btn);
+            toolBar.add(btn);
             toolBar.addSeparator(new Dimension(10, 10));
         }
 
         add(toolBar, BorderLayout.NORTH);
 
-        btnAdd.addActionListener(e -> accionAdd());
-        btnBuscar.addActionListener(e -> accionBuscar());
-        btnEditar.addActionListener(e -> accionEditar());
-        btnBorrar.addActionListener(e -> accionBorrar());
+        // Registrar listeners de cada botón
+        btnAdd.addActionListener(e       -> accionAdd());
+        btnBuscar.addActionListener(e    -> accionBuscar());
+        btnEditar.addActionListener(e    -> accionEditar());
+        btnBorrar.addActionListener(e    -> accionBorrar());
         btnRefrescar.addActionListener(e -> refrescarTablaActiva());
     }
 
+    /**
+     * Aplica el estilo de la paleta a un botón de la barra de herramientas.
+     *
+     * @param btn Botón a estilizar
+     */
+    private void estilizarBoton(JButton btn) {
+        btn.setBackground(colorBotones);
+        btn.setForeground(colorTextoBoton);
+        btn.setFocusPainted(false);
+        btn.setFont(btn.getFont().deriveFont(Font.BOLD));
+        btn.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(colorBorde),
+                BorderFactory.createEmptyBorder(8, 15, 8, 15)
+        ));
+    }
+
     // ===== PANEL DE PESTAÑAS =====
+
+    /**
+     * Construye el panel de pestañas con sus respectivas tablas para
+     * Buses, Conductores y Lugares. También registra el listener de doble clic
+     * en la tabla de conductores para abrir el diálogo de perfil.
+     */
     private void initTabbedPane() {
         tabbedPane = new JTabbedPane();
         tabbedPane.setFont(tabbedPane.getFont().deriveFont(Font.BOLD));
         tabbedPane.setBackground(colorFondo);
-        tabbedPane.setForeground(colorTexto); // Color por defecto para todas las pestañas
+        tabbedPane.setForeground(colorTexto);
         tabbedPane.setBorder(BorderFactory.createLineBorder(colorBorde));
 
-        // Crear las pestañas con sus tablas
-        modelBuses = crearModelo(new String[]{"ID", "Tipo", "Licencia"});
-        tableBuses = crearTabla(modelBuses);
-        tabbedPane.addTab("Buses", crearPanelConTabla(tableBuses));
+        // Pestaña Buses
+        modelBuses  = crearModelo(new String[]{"ID", "Tipo", "Licencia"});
+        tableBuses  = crearTabla(modelBuses);
+        tabbedPane.addTab("Buses", crearScrollConTabla(tableBuses));
 
-        modelConductores = crearModelo(new String[]{"ID", "Nombre", "Apellidos"});
-        tableConductores = crearTabla(modelConductores);
-        tabbedPane.addTab("Conductores", crearPanelConTabla(tableConductores));
+        // Pestaña Conductores (con doble clic para abrir el perfil detallado)
+        modelConductores  = crearModelo(new String[]{"ID", "Nombre", "Apellidos"});
+        tableConductores  = crearTabla(modelConductores);
+        registrarDobleClicConductores(); // <-- Nueva funcionalidad
+        tabbedPane.addTab("Conductores", crearScrollConTabla(tableConductores));
 
-        modelLugares = crearModelo(new String[]{"ID", "Código Postal", "Ciudad", "Ubicación"});
-        tableLugares = crearTabla(modelLugares);
-        tabbedPane.addTab("Lugares", crearPanelConTabla(tableLugares));
+        // Pestaña Lugares
+        modelLugares  = crearModelo(new String[]{"ID", "Código Postal", "Ciudad", "Ubicación"});
+        tableLugares  = crearTabla(modelLugares);
+        tabbedPane.addTab("Lugares", crearScrollConTabla(tableLugares));
 
-        // Listener para cambiar el color del texto de la pestaña seleccionada a blanco
-        tabbedPane.addChangeListener(e -> {
-            int selected = tabbedPane.getSelectedIndex();
-            for (int i = 0; i < tabbedPane.getTabCount(); i++) {
-                if (i == selected) {
-                    tabbedPane.setForegroundAt(i, Color.BLACK);
-                } else {
-                    tabbedPane.setForegroundAt(i, colorTexto);
-                }
-            }
-        });
+        // Resaltar visualmente la pestaña seleccionada
+        tabbedPane.addChangeListener(e -> actualizarColorPestanaSeleccionada());
 
         add(tabbedPane, BorderLayout.CENTER);
     }
 
+    /**
+     * Registra el listener de doble clic en la tabla de conductores.
+     * Al hacer doble clic en una fila, abre el {@link ConductorPerfilDialog}
+     * con la lista completa de conductores y el índice del conductor seleccionado.
+     */
+    private void registrarDobleClicConductores() {
+        tableConductores.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                // Solo actuar ante doble clic
+                if (e.getClickCount() != 2) {
+                    return;
+                }
+
+                int filaSeleccionada = tableConductores.getSelectedRow();
+                if (filaSeleccionada == -1) {
+                    return; // Ninguna fila seleccionada
+                }
+
+                // Cargar la lista completa de conductores para la navegación en el perfil
+                List<Conductor> listaConductores = ConductorDAO.findAll(con);
+                if (listaConductores == null || listaConductores.isEmpty()) {
+                    mostrarAviso("No hay conductores disponibles.");
+                    return;
+                }
+
+                // Obtener el ID del conductor seleccionado para encontrar su índice en la lista
+                int idConductorSeleccionado = (int) modelConductores.getValueAt(filaSeleccionada, 0);
+                int indiceEnLista = buscarIndicePorId(listaConductores, idConductorSeleccionado);
+
+                if (indiceEnLista == -1) {
+                    mostrarAviso("No se encontró el conductor seleccionado.");
+                    return;
+                }
+
+                // Abrir el diálogo de perfil con el conductor seleccionado
+                ConductorPerfilDialog perfil = new ConductorPerfilDialog(
+                        PrincipalView.this,
+                        listaConductores,
+                        indiceEnLista,
+                        con
+                );
+                perfil.setVisible(true);
+
+                // Refrescar la tabla al cerrar el perfil (por si se editaron datos)
+                cargarConductores();
+            }
+        });
+    }
+
+    /**
+     * Busca el índice de un conductor en la lista por su ID.
+     *
+     * @param lista Lista de conductores donde buscar
+     * @param idC   Identificador del conductor buscado
+     * @return Índice en la lista, o {@code -1} si no se encuentra
+     */
+    private int buscarIndicePorId(List<Conductor> lista, int idC) {
+        for (int i = 0; i < lista.size(); i++) {
+            if (lista.get(i).getId_C() == idC) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /** Cambia el color del texto de las pestañas para resaltar la seleccionada. */
+    private void actualizarColorPestanaSeleccionada() {
+        int seleccionada = tabbedPane.getSelectedIndex();
+        for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+            tabbedPane.setForegroundAt(i, i == seleccionada ? Color.BLACK : colorTexto);
+        }
+    }
+
+    // ===== FÁBRICA DE COMPONENTES DE TABLA =====
+
+    /**
+     * Crea un {@link DefaultTableModel} no editable con las columnas indicadas.
+     *
+     * @param columnas Nombres de las columnas de la tabla
+     * @return Modelo de tabla no editable
+     */
     private DefaultTableModel crearModelo(String[] columnas) {
         return new DefaultTableModel(columnas, 0) {
             @Override
             public boolean isCellEditable(int row, int col) {
-                return false;
+                return false; // Las celdas no son editables directamente
             }
         };
     }
 
+    /**
+     * Crea y configura una {@link JTable} con el estilo de la paleta del sistema.
+     * Incluye filas alternas y renderizado personalizado.
+     *
+     * @param modelo Modelo de datos de la tabla
+     * @return Tabla configurada y estilizada
+     */
     private JTable crearTabla(DefaultTableModel modelo) {
         JTable tabla = new JTable(modelo);
         tabla.setRowHeight(25);
@@ -154,51 +293,61 @@ public class PrincipalView extends JFrame {
         tabla.setSelectionForeground(Color.WHITE);
         tabla.setBorder(BorderFactory.createLineBorder(colorBorde));
 
-        // Cabecera de la tabla
-        JTableHeader header = tabla.getTableHeader();
-        header.setBackground(colorToolbar);
-        header.setForeground(colorTexto);
-        header.setFont(header.getFont().deriveFont(Font.BOLD));
+        // Estilizar la cabecera de la tabla
+        JTableHeader cabecera = tabla.getTableHeader();
+        cabecera.setBackground(colorToolbar);
+        cabecera.setForeground(colorTexto);
+        cabecera.setFont(cabecera.getFont().deriveFont(Font.BOLD));
 
-        // Renderer para filas alternadas y colores de texto/fondo
+        // Renderizador personalizado para filas alternas y colores de selección
         tabla.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable t, Object value,
-                                                           boolean isSelected, boolean hasFocus,
-                                                           int row, int column) {
-                Component c = super.getTableCellRendererComponent(t, value, isSelected, hasFocus, row, column);
+                    boolean isSelected, boolean hasFocus, int row, int column) {
+                Component celda = super.getTableCellRendererComponent(
+                        t, value, isSelected, hasFocus, row, column);
                 if (!isSelected) {
-                    c.setBackground(row % 2 == 0 ? colorTablaFondo : colorTablaAlt);
-                    c.setForeground(colorTexto);
+                    celda.setBackground(row % 2 == 0 ? colorTablaFondo : colorTablaAlt);
+                    celda.setForeground(colorTexto);
                 } else {
-                    c.setBackground(colorBotones);
-                    c.setForeground(Color.WHITE);
+                    celda.setBackground(colorBotones);
+                    celda.setForeground(Color.WHITE);
                 }
-                return c;
+                return celda;
             }
         });
 
         return tabla;
     }
 
-    private JScrollPane crearPanelConTabla(JTable tabla) {
+    /**
+     * Envuelve una tabla en un {@link JScrollPane} estilizado.
+     *
+     * @param tabla Tabla a envolver
+     * @return JScrollPane con la tabla y estilo de la paleta
+     */
+    private JScrollPane crearScrollConTabla(JTable tabla) {
         JScrollPane scroll = new JScrollPane(tabla);
         scroll.setBorder(BorderFactory.createLineBorder(colorBorde));
         scroll.getViewport().setBackground(colorTablaFondo);
         return scroll;
     }
 
-    // ===== PANEL INFERIOR =====
+    // ===== PANEL INFERIOR DE ESTADO =====
+
+    /** Construye el panel inferior con la etiqueta de estado de la aplicación. */
     private void initBottomPanel() {
-        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        bottom.setBackground(colorToolbar);
-        bottom.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, colorBorde));
+        JPanel panelInferior = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        panelInferior.setBackground(colorToolbar);
+        panelInferior.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, colorBorde));
         lblEstado.setForeground(colorTexto);
-        bottom.add(lblEstado);
-        add(bottom, BorderLayout.SOUTH);
+        panelInferior.add(lblEstado);
+        add(panelInferior, BorderLayout.SOUTH);
     }
 
-    // ===== MÉTODOS DE CARGA DE DATOS =====
+    // ===== CARGA DE DATOS =====
+
+    /** Recarga la tabla de buses desde la base de datos. */
     private void cargarBuses() {
         modelBuses.setRowCount(0);
         List<Bus> buses = BusDAO.findAll(con);
@@ -209,6 +358,7 @@ public class PrincipalView extends JFrame {
         }
     }
 
+    /** Recarga la tabla de conductores desde la base de datos. */
     private void cargarConductores() {
         modelConductores.setRowCount(0);
         List<Conductor> conductores = ConductorDAO.findAll(con);
@@ -219,6 +369,7 @@ public class PrincipalView extends JFrame {
         }
     }
 
+    /** Recarga la tabla de lugares desde la base de datos. */
     private void cargarLugares() {
         modelLugares.setRowCount(0);
         List<Lugar> lugares = LugarDAO.findAll(con);
@@ -229,73 +380,83 @@ public class PrincipalView extends JFrame {
         }
     }
 
-    // ===== MÉTODOS AUXILIARES PARA LA PESTAÑA ACTIVA =====
+    // ===== MÉTODOS AUXILIARES DE PESTAÑA ACTIVA =====
+
+    /** Devuelve el título de la pestaña actualmente seleccionada. */
     private String getEntidadActiva() {
         return tabbedPane.getTitleAt(tabbedPane.getSelectedIndex());
     }
 
+    /** Devuelve la tabla correspondiente a la pestaña activa. */
     private JTable getTablaActiva() {
-        int index = tabbedPane.getSelectedIndex();
-        switch (index) {
-            case 0: return tableBuses;
-            case 1: return tableConductores;
-            case 2: return tableLugares;
-            default: return null;
-        }
+        return switch (tabbedPane.getSelectedIndex()) {
+            case 0 -> tableBuses;
+            case 1 -> tableConductores;
+            case 2 -> tableLugares;
+            default -> null;
+        };
     }
 
+    /** Devuelve el modelo de datos de la pestaña activa. */
     private DefaultTableModel getModeloActivo() {
-        int index = tabbedPane.getSelectedIndex();
-        switch (index) {
-            case 0: return modelBuses;
-            case 1: return modelConductores;
-            case 2: return modelLugares;
-            default: return null;
-        }
+        return switch (tabbedPane.getSelectedIndex()) {
+            case 0 -> modelBuses;
+            case 1 -> modelConductores;
+            case 2 -> modelLugares;
+            default -> null;
+        };
     }
 
+    /** Recarga los datos de la tabla activa desde la base de datos. */
     private void refrescarTablaActiva() {
         switch (getEntidadActiva()) {
-            case "Buses": cargarBuses(); break;
-            case "Conductores": cargarConductores(); break;
-            case "Lugares": cargarLugares(); break;
+            case "Buses"       -> cargarBuses();
+            case "Conductores" -> cargarConductores();
+            case "Lugares"     -> cargarLugares();
         }
     }
 
     // ===== ACCIONES DE BOTONES =====
+
+    /** Acción del botón "Añadir": delega según la entidad activa. */
     private void accionAdd() {
         switch (getEntidadActiva()) {
-            case "Buses" -> abrirBusCreate();
+            case "Buses"       -> abrirBusCreate();
             case "Conductores" -> abrirConductorCreate();
-            case "Lugares" -> abrirLugarCreate();
+            case "Lugares"     -> abrirLugarCreate();
         }
     }
 
+    /** Acción del botón "Buscar": delega según la entidad activa. */
     private void accionBuscar() {
         switch (getEntidadActiva()) {
-            case "Buses" -> abrirBusSearch();
+            case "Buses"       -> abrirBusSearch();
             case "Conductores" -> abrirConductorSearch();
-            case "Lugares" -> abrirLugarSearch();
+            case "Lugares"     -> abrirLugarSearch();
         }
     }
 
+    /** Acción del botón "Editar": delega según la entidad activa. */
     private void accionEditar() {
         switch (getEntidadActiva()) {
-            case "Buses" -> abrirBusEdit();
+            case "Buses"       -> abrirBusEdit();
             case "Conductores" -> abrirConductorEdit();
-            case "Lugares" -> abrirLugarEdit();
+            case "Lugares"     -> abrirLugarEdit();
         }
     }
 
+    /** Acción del botón "Borrar": delega según la entidad activa. */
     private void accionBorrar() {
         switch (getEntidadActiva()) {
-            case "Buses" -> borrarBusSeleccionado();
+            case "Buses"       -> borrarBusSeleccionado();
             case "Conductores" -> borrarConductorSeleccionado();
-            case "Lugares" -> borrarLugarSeleccionado();
+            case "Lugares"     -> borrarLugarSeleccionado();
         }
     }
 
     // ===== OPERACIONES PARA BUS =====
+
+    /** Abre el diálogo de creación de un nuevo bus. */
     private void abrirBusCreate() {
         BusDialog dialog = new BusDialog(this, BusDialogMode.CREATE, null);
         dialog.setVisible(true);
@@ -305,6 +466,7 @@ public class PrincipalView extends JFrame {
         }
     }
 
+    /** Abre el diálogo de edición del bus seleccionado en la tabla. */
     private void abrirBusEdit() {
         int fila = tableBuses.getSelectedRow();
         if (fila == -1) {
@@ -324,6 +486,7 @@ public class PrincipalView extends JFrame {
         }
     }
 
+    /** Abre el diálogo de búsqueda de un bus por ID. */
     private void abrirBusSearch() {
         BusDialog dialog = new BusDialog(this, BusDialogMode.SEARCH, null);
         dialog.setVisible(true);
@@ -339,6 +502,7 @@ public class PrincipalView extends JFrame {
         }
     }
 
+    /** Elimina el bus seleccionado en la tabla tras confirmar la acción. */
     private void borrarBusSeleccionado() {
         int fila = tableBuses.getSelectedRow();
         if (fila == -1) {
@@ -354,6 +518,8 @@ public class PrincipalView extends JFrame {
     }
 
     // ===== OPERACIONES PARA CONDUCTOR =====
+
+    /** Abre el diálogo de creación de un nuevo conductor. */
     private void abrirConductorCreate() {
         ConductorDialog dialog = new ConductorDialog(this, ConductorDialogMode.CREATE, null);
         dialog.setVisible(true);
@@ -363,6 +529,7 @@ public class PrincipalView extends JFrame {
         }
     }
 
+    /** Abre el diálogo de edición del conductor seleccionado en la tabla. */
     private void abrirConductorEdit() {
         int fila = tableConductores.getSelectedRow();
         if (fila == -1) {
@@ -382,6 +549,7 @@ public class PrincipalView extends JFrame {
         }
     }
 
+    /** Abre el diálogo de búsqueda de un conductor por ID. */
     private void abrirConductorSearch() {
         ConductorDialog dialog = new ConductorDialog(this, ConductorDialogMode.SEARCH, null);
         dialog.setVisible(true);
@@ -397,6 +565,7 @@ public class PrincipalView extends JFrame {
         }
     }
 
+    /** Elimina el conductor seleccionado en la tabla tras confirmar la acción. */
     private void borrarConductorSeleccionado() {
         int fila = tableConductores.getSelectedRow();
         if (fila == -1) {
@@ -412,6 +581,8 @@ public class PrincipalView extends JFrame {
     }
 
     // ===== OPERACIONES PARA LUGAR =====
+
+    /** Abre el diálogo de creación de un nuevo lugar. */
     private void abrirLugarCreate() {
         LugarDialog dialog = new LugarDialog(this, LugarDialogMode.CREATE, null);
         dialog.setVisible(true);
@@ -421,6 +592,7 @@ public class PrincipalView extends JFrame {
         }
     }
 
+    /** Abre el diálogo de edición del lugar seleccionado en la tabla. */
     private void abrirLugarEdit() {
         int fila = tableLugares.getSelectedRow();
         if (fila == -1) {
@@ -441,6 +613,7 @@ public class PrincipalView extends JFrame {
         }
     }
 
+    /** Abre el diálogo de búsqueda de un lugar por ID. */
     private void abrirLugarSearch() {
         LugarDialog dialog = new LugarDialog(this, LugarDialogMode.SEARCH, null);
         dialog.setVisible(true);
@@ -456,6 +629,7 @@ public class PrincipalView extends JFrame {
         }
     }
 
+    /** Elimina el lugar seleccionado en la tabla tras confirmar la acción. */
     private void borrarLugarSeleccionado() {
         int fila = tableLugares.getSelectedRow();
         if (fila == -1) {
@@ -471,15 +645,26 @@ public class PrincipalView extends JFrame {
     }
 
     // ===== MÉTODOS DE UTILIDAD PARA DIÁLOGOS =====
+
+    /** Muestra un diálogo de aviso con el mensaje indicado. */
     private void mostrarAviso(String mensaje) {
         JOptionPane.showMessageDialog(this, mensaje, "Aviso", JOptionPane.WARNING_MESSAGE);
     }
 
+    /** Muestra un diálogo informativo con el mensaje indicado. */
     private void mostrarInfo(String mensaje) {
         JOptionPane.showMessageDialog(this, mensaje, "Información", JOptionPane.INFORMATION_MESSAGE);
     }
 
+    /**
+     * Muestra un diálogo de confirmación Sí/No.
+     *
+     * @param pregunta Mensaje de la pregunta a confirmar
+     * @return {@code true} si el usuario confirma con "Sí"
+     */
     private boolean confirmar(String pregunta) {
-        return JOptionPane.showConfirmDialog(this, pregunta, "Confirmar", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
+        return JOptionPane.showConfirmDialog(
+                this, pregunta, "Confirmar", JOptionPane.YES_NO_OPTION
+        ) == JOptionPane.YES_OPTION;
     }
 }

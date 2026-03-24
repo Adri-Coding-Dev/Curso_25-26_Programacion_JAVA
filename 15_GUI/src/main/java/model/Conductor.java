@@ -1,49 +1,56 @@
 package model;
 
 /**
- * Clase Conductor de la BBDD
+ * Modelo que representa un Conductor almacenado en la base de datos.
+ * Contiene los atributos básicos de identificación del conductor.
  */
-
 public class Conductor {
-    //ATRIBUTOS
-    private  int id_C;
-    private  String nombre;
-    private  String apellido;
 
-    //CONSTRUCTOR con parametros (no necesito constructor vacio)
-    public Conductor(int id_C,String nombre,String apellido){
-        this.id_C = id_C;
-        this.nombre = nombre;
+    // ===== ATRIBUTOS =====
+    private int    id_C;      // Identificador único del conductor
+    private String nombre;    // Nombre del conductor
+    private String apellido;  // Apellido del conductor
+
+    // ===== CONSTRUCTOR =====
+
+    /**
+     * Constructor con todos los parámetros.
+     *
+     * @param id_C     Identificador único del conductor
+     * @param nombre   Nombre del conductor
+     * @param apellido Apellido del conductor
+     */
+    public Conductor(int id_C, String nombre, String apellido) {
+        this.id_C     = id_C;
+        this.nombre   = nombre;
         this.apellido = apellido;
     }
 
-    //GETTERS && SETTERS
-    public int getId_C() {
-        return id_C;
-    }
+    // ===== GETTERS Y SETTERS =====
 
-    public void setId_C(int id_C) {
-        this.id_C = id_C;
-    }
+    /** Devuelve el identificador único del conductor. */
+    public int getId_C() { return id_C; }
 
-    public String getNombre() {
-        return nombre;
-    }
+    /** Establece el identificador único del conductor. */
+    public void setId_C(int id_C) { this.id_C = id_C; }
 
-    public void setNombre(String nombre) {
-        this.nombre = nombre;
-    }
+    /** Devuelve el nombre del conductor. */
+    public String getNombre() { return nombre; }
 
-    public String getApellido() {
-        return apellido;
-    }
+    /** Establece el nombre del conductor. */
+    public void setNombre(String nombre) { this.nombre = nombre; }
 
-    public void setApellido(String apellido) {
-        this.apellido = apellido;
-    }
+    /** Devuelve el apellido del conductor. */
+    public String getApellido() { return apellido; }
 
+    /** Establece el apellido del conductor. */
+    public void setApellido(String apellido) { this.apellido = apellido; }
+
+    // ===== UTILIDADES =====
+
+    /** Representación textual del conductor para depuración y logs. */
     @Override
-    public String toString(){
-        return "[Id_C: "+this.id_C+", Nombre: "+this.nombre+", Apellido: "+this.apellido+"]";
+    public String toString() {
+        return "[Id_C: " + id_C + ", Nombre: " + nombre + ", Apellido: " + apellido + "]";
     }
 }
