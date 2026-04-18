@@ -3,11 +3,13 @@ package ui;
 import dao.BusDAO;
 import dao.ConductorDAO;
 import dao.LugarDAO;
+import exceptions.EstadoExcepcion;
 import model.*;
 import ui.dialogs.BusDialog;
 import ui.dialogs.ConductorDialog;
 import ui.dialogs.ConductorPerfilDialog;
 import ui.dialogs.LugarDialog;
+import utils.Utils;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -34,7 +36,6 @@ public class PrincipalView extends JFrame {
     // ===== PALETA MODO OSCURO (tonos negros con acentos azules, profesional y futurista) =====
 
     private final Color colorFondo      = Color.decode("#0B0B12");
-    private final Color colorSuperficie = Color.decode("#14141F");
     private final Color colorToolbar    = Color.decode("#0A1620");
     private final Color colorBotones    = Color.decode("#1E4A8C");
     private final Color colorTexto      = Color.decode("#F0F4FA");
@@ -276,7 +277,7 @@ public class PrincipalView extends JFrame {
     }
 
     /**
-     * Crea y configura una {@link JTable} con el estilo de la paleta del sistema.
+     * Crea y configura una JTable con el estilo de la paleta del sistema.
      * Incluye filas alternas y renderizado personalizado.
      *
      * @param modelo Modelo de datos de la tabla
@@ -497,7 +498,7 @@ public class PrincipalView extends JFrame {
                 modelBuses.setRowCount(0);
                 modelBuses.addRow(new Object[]{encontrado.getId_bus(), encontrado.getTipo(), encontrado.getLicencia()});
             } else {
-                mostrarInfo("No se encontró el bus");
+                mostrarInfo(Utils.mostrarCodigoEstado(EstadoExcepcion.FIND_ERROR));
             }
         }
     }

@@ -1,6 +1,7 @@
 package utils;
 
 import connection.ConfigDB;
+import exceptions.EstadoExcepcion;
 
 import java.util.Scanner;
 import java.util.regex.Matcher;
@@ -24,5 +25,22 @@ public class Utils {
             nombreBBDD = matcher.group(1);
         }
         return nombreBBDD;
+    }
+
+    public static String mostrarCodigoEstado(EstadoExcepcion codigoEstado){
+        switch (codigoEstado){
+            case FIND_ERROR:
+                return "ERROR 104: Registro no Encontrado. Comunicalo con el Administrador de la aplicacion";
+
+            case CONECTING_ERROR:
+                return "ERROR 100: La BBDD No esta conectada. Por favor conectela correctamente";
+
+            case DELETE_ERROR:
+                return "ERROR 103: No se puede borrar la BBDD correctamente";
+
+            case INSERT_ERROR:
+                return "ERROR 102: No se puede Insertar el registro debido a un error en la Consulta";
+        }
+        return null;
     }
 }

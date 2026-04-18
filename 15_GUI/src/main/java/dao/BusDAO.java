@@ -1,7 +1,10 @@
 package dao;
 
+import exceptions.EstadoExcepcion;
 import model.Bus;
+import utils.Utils;
 
+import javax.swing.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -60,7 +63,6 @@ public class BusDAO {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
         }
 
         return null;
@@ -80,7 +82,6 @@ public class BusDAO {
             return ps.executeUpdate() == 1;
 
         } catch (SQLException e) {
-            e.printStackTrace();
             return false;
         }
     }

@@ -8,7 +8,7 @@ public class ConfigDB {
      * PASS -> Contraseña del usuario
      */
     private  final String URL = "jdbc:mariadb://localhost:3306/Mi_Aucorsa";
-    private  final String USER = "root";
+    private  final String USER = "blackforce";
     private  final String PASS = "root";
 
     /**

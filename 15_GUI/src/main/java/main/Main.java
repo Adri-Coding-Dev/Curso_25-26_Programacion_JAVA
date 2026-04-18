@@ -31,7 +31,7 @@ public class Main {
                     "Error",
                     JOptionPane.ERROR_MESSAGE
             );
-            e.printStackTrace();
+            System.out.println("Error al conectarse con la Base de Datos");
         }
     }
 }
